@@ -1,8 +1,0 @@
-helm/helmfile.dev.gotmpl
-helm/values/values-dev/
-
-helmfile.dev.gotmpl
-values/values-dev/
-
-helm/helmfile.dev.yaml
-helmfile.dev.yaml
