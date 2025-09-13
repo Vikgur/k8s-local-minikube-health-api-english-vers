@@ -1,0 +1,97 @@
+releases:
+  - name: backend-blue
+    namespace: health-api
+    chart: ./backend
+    values:
+      - values/blue/backend.yaml
+      - image:
+          tag: "{{ requiredEnv "VERSION" }}"
+      - env:
+          VERSION: "{{ requiredEnv "VERSION" }}"
+    needs: [postgres]
+
+  - name: backend-green
+    namespace: health-api
+    chart: ./backend
+    values:
+      - values/green/backend.yaml
+      - image:
+          tag: "{{ requiredEnv "VERSION" }}"
+      - env:
+          VERSION: "{{ requiredEnv "VERSION" }}"
+    needs: [postgres]
+
+  - name: frontend-blue
+    namespace: health-api
+    chart: ./frontend
+    values:
+      - values/blue/frontend.yaml
+      - image:
+          tag: "{{ requiredEnv "VERSION" }}"
+      - env:
+          VERSION: "{{ requiredEnv "VERSION" }}"
+
+  - name: frontend-green
+    namespace: health-api
+    chart: ./frontend
+    values:
+      - values/green/frontend.yaml
+      - image:
+          tag: "{{ requiredEnv "VERSION" }}"
+      - env:
+          VERSION: "{{ requiredEnv "VERSION" }}"
+
+
+  - name: postgres
+    namespace: health-api
+    chart: ../bitnami_charts/bitnami/postgresql
+    values:
+      - values/postgres.yaml
+
+  - name: swagger
+    namespace: health-api
+    chart: ./swagger
+    values:
+      - values/swagger.yaml
+    needs: [backend]
+
+  - name: nginx-blue
+    namespace: health-api
+    chart: ./nginx
+    values:
+      - values/blue/nginx.yaml
+      - image:
+          tag: "{{ requiredEnv "VERSION" }}"
+      - env:
+          VERSION: "{{ requiredEnv "VERSION" }}"
+    needs: [frontend-blue, backend-blue, swagger]
+
+  - name: nginx-green
+    namespace: health-api
+    chart: ./nginx
+    values:
+      - values/green/nginx.yaml
+      - image:
+          tag: "{{ requiredEnv "VERSION" }}"
+      - env:
+          VERSION: "{{ requiredEnv "VERSION" }}"
+    needs: [frontend-green, backend-green, swagger]
+
+  - name: alias-service
+    namespace: health-api
+    chart: ./alias-service
+    installed: true
+    values:
+      - ./alias-service/values.yaml
+      # Позволяет менять активный слот через переменную окружения TRACK
+      - selectedTrack: {{ env "TRACK" | default "blue" }}
+
+  - name: jaeger
+    namespace: health-api
+    chart: ./jaeger
+    installed: true
+
+  - name: init-db
+    namespace: health-api
+    chart: ./init-db
+    installed: false

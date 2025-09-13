@@ -1,0 +1,63 @@
+environments:
+  dev:
+    values:
+      - image:
+          tag: "{{ requiredEnv "VERSION" }}"
+      - env:
+          VERSION: "{{ requiredEnv "VERSION" }}"
+
+---
+
+releases:
+  - name: backend
+    namespace: health-api
+    chart: ./backend
+    values:
+      - values/backend.yaml
+      - values/values-dev/backend.yaml
+    needs: [postgres]
+
+  - name: frontend
+    namespace: health-api
+    chart: ./frontend
+    values:
+      - values/frontend.yaml
+      - values/values-dev/frontend.yaml
+
+  - name: postgres
+    namespace: health-api
+    chart: ../bitnami_charts/bitnami/postgresql
+    values:
+      - values/postgres.yaml
+      - values/values-dev/postgres.yaml
+
+  - name: swagger
+    namespace: health-api
+    chart: ./swagger
+    values:
+      - values/swagger.yaml
+      - values/values-dev/swagger.yaml
+    needs: [backend]
+
+  - name: nginx
+    namespace: health-api
+    chart: ./nginx
+    values:
+      - values/nginx.yaml
+      - values/values-dev/nginx.yaml
+    needs: [frontend, backend, swagger]
+
+  - name: alias-service
+    namespace: health-api
+    chart: ./alias-service
+    installed: true
+
+  - name: jaeger
+    namespace: health-api
+    chart: ./jaeger
+    installed: true
+
+  - name: init-db
+    namespace: health-api
+    chart: ./init-db
+    installed: false
